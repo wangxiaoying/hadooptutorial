@@ -34,12 +34,15 @@ public class CookieEventCountByEventType extends Configured implements Tool {
   public static class CookieEventMapper extends Mapper<Object, CookieEvent, Text, IntWritable> {
 
     private final static IntWritable one = new IntWritable(1);
-    private Text eventType = new Text();
+    private IntWritable eventType = new IntWritable();
 
     @Override
     protected void map(Object key, CookieEvent value, Context context) throws IOException, InterruptedException {
 
       // Fill in Your code here
+      if(value == null) return;
+      eventType.set(value.eventType);
+      context.write(eventType, one);
     }
   }
 
@@ -49,8 +52,33 @@ public class CookieEventCountByEventType extends Configured implements Tool {
 
     @Override
     protected void reduce(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
-
+      
       // Fill in Your code here
+      int sum = 0;
+      for(IntWritable value : values){
+        sum += value.get();
+      }
+      result.set(sum);
+      
+      switch(Character.toChars(key))
+      {
+        case 's':
+          context.getCounter(EVENTTYPE.S).increment(sum);
+          break;
+        case 'c':
+          context.getCounter(EVENTTYPE.C).increment(sum);
+          break;
+        case 't':
+          context.getCounter(EVENTTYPE.T).increment(sum);
+          break;
+        case 'v':
+          context.getCounter(EVENTTYPE.V).increment(sum);
+          break;
+        default:
+          context.getCounter(EVENTTYPE.OTHER).increment(sum);
+      }
+
+      context.write(key, result);
     }
   }
 
